@@ -1,6 +1,7 @@
 @file:Suppress("UNUSED_PARAMETER") // <- REMOVE
 package galaxyraiders.core.physics
 
+import kotlin.math.*
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 @JsonIgnoreProperties("unit", "normal", "degree", "magnitude")
@@ -10,13 +11,13 @@ data class Vector2D(val dx: Double, val dy: Double) {
   }
 
   val magnitude: Double
-    get() = INVALID_DOUBLE
+    get() = sqrt(dx.pow(2) + dy.pow(2))
 
   val radiant: Double
-    get() = INVALID_DOUBLE
+    get() = atan2(dy, dx)
 
   val degree: Double
-    get() = INVALID_DOUBLE
+    get() = 180*atan2(dy, dx)/3.1415
 
   val unit: Vector2D
     get() = INVALID_VECTOR
