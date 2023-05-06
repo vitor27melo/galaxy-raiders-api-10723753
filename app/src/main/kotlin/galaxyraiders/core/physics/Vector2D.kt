@@ -1,7 +1,13 @@
 package galaxyraiders.core.physics
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import kotlin.math.*
+import java.util.Locale
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.pow
+import kotlin.math.sqrt
+
+const val HALF_PI = 180
 
 @JsonIgnoreProperties("unit", "normal", "degree", "magnitude")
 data class Vector2D(val dx: Double, val dy: Double) {
@@ -16,11 +22,11 @@ data class Vector2D(val dx: Double, val dy: Double) {
     get() = atan2(dy, dx)
 
   val degree: Double
-    get() = 180 * radiant / 3.1415
+    get() = HALF_PI * radiant / PI
 
   val unit: Vector2D
     get() = Vector2D(dx / magnitude, dy / magnitude)
- 
+
   val normal: Vector2D
     get() = Vector2D(dy, -dx).unit
 
@@ -58,13 +64,16 @@ data class Vector2D(val dx: Double, val dy: Double) {
 
   fun vectorProject(target: Vector2D): Vector2D {
     val vec = Vector2D(dx, dy)
-    val proj = target *((vec * target) / (target.magnitude*target.magnitude))
+    val proj = target * ((vec * target) / (target.magnitude * target.magnitude))
     // Estava dando erro de assert para a tupla [7.0, 7.000000000001]
-    val result = Vector2D(String.format("%.2f", proj.dx).toDouble(), String.format("%.2f", proj.dy).toDouble())
+    val result = Vector2D(
+      String.format(Locale.US, "%.2f", proj.dx).toDouble(),
+      String.format(Locale.US, "%.2f", proj.dy).toDouble()
+    )
     return result
   }
 }
 
 operator fun Double.times(v: Vector2D): Vector2D {
-  return Vector2D(v.dx*2, v.dy*2)
+  return Vector2D(v.dx * 2, v.dy * 2)
 }
