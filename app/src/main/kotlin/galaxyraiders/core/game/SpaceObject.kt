@@ -24,3 +24,5 @@ open class SpaceObject(
     return boundaryX.contains(this.center.x) && boundaryY.contains(this.center.y)
   }
 }
+
+
