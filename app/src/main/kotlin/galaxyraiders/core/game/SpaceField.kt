@@ -1,4 +1,5 @@
 package galaxyraiders.core.game
+import java.time.Instant
 
 import galaxyraiders.Config
 import galaxyraiders.core.physics.Point2D
@@ -38,8 +39,32 @@ data class SpaceField(val width: Int, val height: Int, val generator: RandomGene
   var asteroids: List<Asteroid> = emptyList()
     private set
 
+  // INICIO PARTE 2 - EP
+
+  var explosions: List<Explosion> = emptyList()
+    private set
+
+  fun generateExplosion(position: Point2D) {
+    this.explosions += 
+      Explosion(
+        initialPosition = position,
+        initialVelocity = Vector2D(dx = 0.0, dy = 0.0),
+        radius = 5.0,
+        mass = 5.0,
+        creationTime =  Instant.now().getEpochSecond()
+      )
+  }
+  
+  fun trimExplosions() {
+    this.explosions = this.explosions.filter {
+      it.shouldStillExist()
+    }
+  }
+
+  // FIM PARTE 2 - EP
+
   val spaceObjects: List<SpaceObject>
-    get() = listOf(this.ship) + this.missiles + this.asteroids
+    get() = listOf(this.ship) + this.missiles + this.asteroids + this.explosions
 
   fun moveShip() {
     this.ship.move(boundaryX, boundaryY)
