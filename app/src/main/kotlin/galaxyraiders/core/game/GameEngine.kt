@@ -6,8 +6,26 @@ import galaxyraiders.ports.ui.Controller
 import galaxyraiders.ports.ui.Controller.PlayerCommand
 import galaxyraiders.ports.ui.Visualizer
 import kotlin.system.measureTimeMillis
+import java.io.File
+import java.nio.file.Paths
+import com.beust.klaxon.Klaxon
+import java.util.Locale
+import java.util.Calendar
+import java.text.SimpleDateFormat
+
 
 const val MILLISECONDS_PER_SECOND: Int = 1000
+
+class Score(
+    var matchId: Int?,
+    var startTime: String?,
+    var nAsteroidsDestroyed: Int?,
+    var score: Int?
+  )
+
+var score = Score(0, "", 0, 0)
+var updatedThisSecond = 0
+var firstRun = 1
 
 object GameEngineConfig {
   private val config = Config(prefix = "GR__CORE__GAME__GAME_ENGINE__")
@@ -25,7 +43,7 @@ object GameEngineConfig {
 class GameEngine(
   val generator: RandomGenerator,
   val controller: Controller,
-  val visualizer: Visualizer,
+  val visualizer: Visualizer
 ) {
   val field = SpaceField(
     width = GameEngineConfig.spaceFieldWidth,
@@ -36,6 +54,7 @@ class GameEngine(
   var playing = true
 
   fun execute() {
+    this.parseScoreBoardJson()
     while (true) {
       val duration = measureTimeMillis { this.tick() }
 
@@ -52,9 +71,52 @@ class GameEngine(
   }
 
   fun tick() {
+    val segundo = SimpleDateFormat("ss", Locale.getDefault()).format(Calendar.getInstance().time)
+    if (segundo.toInt() % 10 == 0 && updatedThisSecond == 0) {
+      this.updateScoreBoardJson(1)
+      updatedThisSecond = 1
+    }
+    if (segundo.toInt() % 7 == 0) {
+      updatedThisSecond = 0
+    }
     this.processPlayerInput()
     this.updateSpaceObjects()
     this.renderSpaceField()
+  }
+
+  fun parseScoreBoardJson() {
+    var arquivoScore = File("src/main/kotlin/galaxyraiders/core/score/scoreboard.json").readText(Charsets.UTF_8)
+    var scoreArray = Klaxon().parseArray<Score>(arquivoScore)
+
+    val firstObj = scoreArray!![0]
+    val newMatchId = firstObj.matchId!! + 1
+    val newDateString = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Calendar.getInstance().time)
+
+    score.matchId = newMatchId
+    score.startTime = newDateString   
+    this.updateScoreBoardJson(0)
+  }
+
+  fun updateScoreBoardJson(excludeFirst: Int) {
+    var filename = "src/main/kotlin/galaxyraiders/core/score/scoreboard.json"
+    var arquivoScore = File(filename)
+    // var texto = arquivoScore.readText(Charsets.UTF_8)
+    var scoreArray = Klaxon().parseArray<Score>(arquivoScore)
+
+
+    //Atualiza scoreboard
+    val items = mutableListOf(score)
+
+    var i = excludeFirst
+    while (i < scoreArray.size) {
+      items.add(scoreArray[i])
+      i = i+1
+    } 
+    arquivoScore.delete() 
+    arquivoScore.createNewFile()
+    var json = Klaxon().toJsonString(items)
+
+    arquivoScore.writeText(json)
   }
 
   fun processPlayerInput() {
@@ -91,8 +153,6 @@ class GameEngine(
           // INICIO PARTE 2 - EP
           if (first.type == "Missile") {
             this.field.generateExplosion(first.center)
-            println("Explosions HAPPENED at")
-            println(first.center)
           }
           // FIM PARTE 2 - EP
           first.collideWith(second, GameEngineConfig.coefficientRestitution)
